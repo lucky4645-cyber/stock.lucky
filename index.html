@@ -1,76 +1,139 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky's Pro Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nisha - Private Library v3</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #020617; color: white; font-family: sans-serif; overflow: hidden; }
+        .char-img { height: 45vh; width: 100%; object-fit: cover; border-radius: 0 0 30px 30px; border-bottom: 4px solid #ec4899; }
+        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); border-top: 1px solid #ec4899; }
+        .stat-fill { height: 100%; background: #ec4899; transition: width 0.4s; }
+        /* Episode Buttons Custom Style */
+        .btn-ep { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; padding: 12px 5px; border-radius: 15px; font-size: 11px; font-weight: 800; color: #60a5fa; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn-ep:active { transform: scale(0.9); background: #ec4899; color: white; border-color: #f472b6; }
+    </style>
 </head>
-<body class="bg-[#0a0e17] text-white">
+<body>
 
-    <div class="p-4 bg-[#131722] border-b border-gray-800 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-sky-400">STOCK TERMINAL</h1>
-        <span class="text-xs text-emerald-400 font-mono animate-pulse text-right">● LIVE FEED</span>
+    <div class="fixed top-0 w-full p-4 z-10 flex justify-between items-center bg-black/60">
+        <div class="flex flex-col">
+            <span class="text-[10px] font-black text-pink-500 uppercase tracking-widest">Nisha's Mood</span>
+            <div class="h-1.5 w-28 bg-slate-800 rounded-full mt-1">
+                <div id="affFill" class="stat-fill" style="width: 35%"></div>
+            </div>
+        </div>
+        <button onclick="openGallery()" class="bg-pink-600 px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-pink-900/50">🖼️ ALBUM</button>
     </div>
 
-    <div class="h-[600px] w-full">
-        <div class="tradingview-widget-container" style="height:100%;width:100%">
-          <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-          {
-          "autosize": true,
-          "symbol": "NSE:SBIN",
-          "interval": "D",
-          "timezone": "Asia/Kolkata",
-          "theme": "dark",
-          "style": "1",
-          "locale": "en",
-          "allow_symbol_change": true,
-          "calendar": true,
-          "support_host": "https://www.tradingview.com"
+    <div class="flex flex-col items-center">
+        <img id="mainImg" src="https://i.postimg.cc/vTrCPJ3Y/IMG-20260504-125620-273.jpg" class="char-img">
+        <div class="mt-4 px-6 text-center">
+            <p id="dialogue" class="text-sm font-bold text-pink-100 italic leading-tight">"Boss, badha Episodes ready che! Kyu vanchvu che?"</p>
+        </div>
+    </div>
+
+    <div class="px-6 mt-4">
+        <h3 class="text-[10px] text-slate-500 font-bold uppercase mb-3 tracking-widest text-center">Select Episode to Read</h3>
+        <div class="grid grid-cols-3 gap-3">
+            <button onclick="openPDF(0)" class="btn-ep">EPISODE 1</button>
+            <button onclick="openPDF(1)" class="btn-ep">EPISODE 2</button>
+            <button onclick="openPDF(2)" class="btn-ep">EPISODE 3</button>
+            <button onclick="openPDF(3)" class="btn-ep">EPISODE 4</button>
+            <button onclick="openPDF(4)" class="btn-ep">EPISODE 5</button>
+            <div class="btn-ep opacity-30 flex items-center justify-center">🔒 6</div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 w-full p-6 glass rounded-t-[40px]">
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="play('talk')" class="bg-slate-800 py-4 rounded-2xl font-bold border border-slate-700 active:scale-95 transition-all">💬 TALK</button>
+            <button onclick="play('flirt')" class="bg-pink-600 py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-all">🔥 FLIRT</button>
+        </div>
+    </div>
+
+    <div id="pdfViewer" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
+        <div class="p-4 flex justify-between bg-slate-900 items-center border-b border-pink-500/20">
+            <span id="epTitle" class="font-black text-pink-500 text-[10px] uppercase tracking-tighter">Reading Mode</span>
+            <button onclick="closePDF()" class="bg-red-600/20 text-red-500 px-4 py-1 rounded-full font-bold text-sm">CLOSE</button>
+        </div>
+        <iframe id="pdfIframe" src="" class="w-full h-full border-none bg-white"></iframe>
+    </div>
+
+    <div id="galleryModal" class="fixed inset-0 bg-[#020617] z-50 hidden p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-black text-pink-500 italic uppercase">Secret Album</h2>
+            <button onclick="closeGallery()" class="text-3xl">&times;</button>
+        </div>
+        <div id="galleryContent" class="flex flex-col gap-6 pb-20"></div>
+    </div>
+
+    <script>
+        // DRIVE LINKS (Preview mode ma jethi direct viewer ma khule)
+        const episodes = [
+            "https://drive.google.com/file/d/1hTpIo_2X3bJ6VRVHhVv4XrHXX6MsNhzl/preview",
+            "https://drive.google.com/file/d/1eFLdtotfFTO7IXwtxjm5w5Ki775TDN2o/preview",
+            "https://drive.google.com/file/d/1UwYBK1_GDuAFRPDHd107YR-OW6IgNRKI/preview",
+            "https://drive.google.com/file/d/1szIfFQ8937LlD-_Nw2F1aUwCBgSbQRUF/preview",
+            "https://drive.google.com/file/d/1CoG9YGwqclw7V5XYcQ8TDsO4Lds6VXZb/preview"
+        ];
+
+        const photos = [
+            "https://i.postimg.cc/vTrCPJ3Y/IMG-20260504-125620-273.jpg",
+            "https://i.postimg.cc/XvZj2vF6/IMG-20260504-130852-827.jpg",
+            "https://i.postimg.cc/rmx8kYQh/IMG-20260504-130903-431.jpg",
+            "https://i.postimg.cc/SsCyhtD5/IMG-20260504-130916-259.jpg"
+        ];
+
+        let aff = 35;
+        let unlocked = [];
+
+        function play(type) {
+            const d = document.getElementById('dialogue');
+            const img = document.getElementById('mainImg');
+            if(type === 'talk') { 
+                aff += 10; 
+                d.innerText = "Tame toh bau sweet vaato karo cho, baby! 😍"; 
+            } else {
+                if(aff < 65) { 
+                    d.innerText = "Haji thodo prem bataavo, pachi hot photos jova malsho! 😉"; 
+                    aff += 5; 
+                } else {
+                    let idx = unlocked.length;
+                    if(idx < photos.length) {
+                        unlocked.push(photos[idx]);
+                        img.src = photos[idx];
+                        d.innerText = "🔥 NEW SECRET PHOTO UNLOCKED! Check Album.";
+                    } else {
+                        d.innerText = "Badhi photos joi lidhi! Have story vancho... 😋";
+                    }
+                }
+            }
+            document.getElementById('affFill').style.width = Math.min(aff, 100) + "%";
         }
-          </script>
-        </div>
-        </div>
 
-    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-[#131722] p-4 rounded-xl border border-gray-800 min-h-[400px]">
-            <h3 class="text-sky-400 font-bold mb-4">Financials</h3>
-            <div class="tradingview-widget-container">
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-financials.js" async>
-                {
-                  "isTransparent": true,
-                  "displayMode": "regular",
-                  "width": "100%",
-                  "height": "400",
-                  "colorTheme": "dark",
-                  "symbol": "NSE:SBIN",
-                  "locale": "en"
-                }
-                </script>
-            </div>
-        </div>
+        function openPDF(index) {
+            document.getElementById('epTitle').innerText = "PRIVATE ACCESS: EPISODE " + (index + 1);
+            document.getElementById('pdfIframe').src = episodes[index];
+            document.getElementById('pdfViewer').classList.remove('hidden');
+        }
+
+        function closePDF() {
+            document.getElementById('pdfViewer').classList.add('hidden');
+            document.getElementById('pdfIframe').src = "";
+        }
+
+        function openGallery() {
+            const cont = document.getElementById('galleryContent');
+            cont.innerHTML = unlocked.length === 0 ? "<p class='text-center text-slate-600 mt-20 italic'>Haji Nisha sharmay che...<br>Thodu 'Flirt' karo!</p>" : "";
+            unlocked.forEach(src => { 
+                cont.innerHTML += `<div class="rounded-2xl overflow-hidden border border-pink-500/20 shadow-2xl shadow-pink-500/10"><img src="${src}" class="w-full"></div>`; 
+            });
+            document.getElementById('galleryModal').classList.remove('hidden');
+        }
         
-        <div class="bg-[#131722] p-4 rounded-xl border border-gray-800 min-h-[400px]">
-            <h3 class="text-sky-400 font-bold mb-4">Technical Gauge</h3>
-            <div class="tradingview-widget-container">
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-                {
-                  "interval": "1D",
-                  "width": "100%",
-                  "isTransparent": true,
-                  "height": "400",
-                  "symbol": "NSE:SBIN",
-                  "showIntervalTabs": true,
-                  "displayMode": "single",
-                  "locale": "en",
-                  "colorTheme": "dark"
-                }
-                </script>
-            </div>
-        </div>
-    </div>
-
+        function closeGallery() { document.getElementById('galleryModal').classList.add('hidden'); }
+    </script>
 </body>
 </html>
